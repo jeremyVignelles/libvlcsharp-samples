@@ -1,18 +1,15 @@
-﻿using System;
+﻿using LibVLCSharp.Shared;
+using SixLabors.ImageSharp;
+using SixLabors.ImageSharp.Advanced;
+using SixLabors.ImageSharp.Processing;
+using System;
 using System.Collections.Concurrent;
 using System.IO;
 using System.IO.MemoryMappedFiles;
-using System.Linq;
-using System.Net.Mime;
 using System.Reflection;
 using System.Runtime.InteropServices;
-using System.Text;
 using System.Threading;
 using System.Threading.Tasks;
-using LibVLCSharp.Shared;
-using SixLabors.ImageSharp;
-using SixLabors.ImageSharp.Advanced;
-using SixLabors.ImageSharp.PixelFormats;
 
 namespace PreviewThumbnailExtractor
 {
@@ -106,18 +103,15 @@ namespace PreviewThumbnailExtractor
             {
                 if (FilesToProcess.TryDequeue(out var file))
                 {
-                    using (var image = new Image<SixLabors.ImageSharp.PixelFormats.Bgra32>((int)Width, (int)Height))
+                    using (var image = new Image<SixLabors.ImageSharp.PixelFormats.Bgra32>((int)(Pitch / BytePerPixel), (int)Lines))
                     using (var sourceStream = file.file.CreateViewStream())
                     {
-                        for (var i = 0; i < Height; i++)
-                        {
-                            sourceStream.Seek(i * Pitch, SeekOrigin.Begin);
-                            sourceStream.Read(MemoryMarshal.AsBytes(image.GetPixelRowSpan(i)));
-                        }
+                        sourceStream.Read(MemoryMarshal.AsBytes(image.GetPixelSpan()));
 
                         var fileName = Path.Combine(destination, $"{frameNumber:0000}.jpg");
                         using (var outputFile = File.Open(fileName, FileMode.Create))
                         {
+                            image.Mutate(ctx => ctx.Crop((int)Width, (int)Height));
                             image.SaveAsJpeg(outputFile);
                         }
                     }
