@@ -65,20 +65,23 @@ namespace PreviewThumbnailExtractor
             // Load native libvlc library
             Core.Initialize();
 
-            using (var libvlc = new LibVLC())
+            using (var libvlc = new LibVLC("--sout-transcode-venc=x264", "--sout-x264-preset=ultrafast", "--sout-x264-profile=high", "--sout-x264-tune=film",
+                "--video-filter=scene", "--scene-format=jpg", "--scene-ratio=100", $"--scene-path={destination}"))
             using (var mediaPlayer = new MediaPlayer(libvlc))
             {
                 // Listen to events
                 var processingCancellationTokenSource = new CancellationTokenSource();
-                mediaPlayer.Stopped += (s, e) => processingCancellationTokenSource.Cancel();
+                mediaPlayer.Stopped += (s, e) => processingCancellationTokenSource.CancelAfter(1);
 
                 // Create new media
-                var media = new Media(libvlc, "http://www.caminandes.com/download/03_caminandes_llamigos_1080p.mp4", FromType.FromLocation);
-                
+                //var media = new Media(libvlc, "http://www.caminandes.com/download/03_caminandes_llamigos_1080p.mp4", FromType.FromLocation);
+                var media = new Media(libvlc, "file:///d:/Videos/03_caminandes_llamigos_1080p.mp4", FromType.FromLocation);
+
                 media.AddOption(":no-audio");
+                media.AddOption(":avcodec-hw=none");
                 // Set the size and format of the video here.
-                mediaPlayer.SetVideoFormat("RV32", Width, Height, Pitch);
-                mediaPlayer.SetVideoCallbacks(Lock, null, Display);
+                /*mediaPlayer.SetVideoFormat("RV32", Width, Height, Pitch);
+                mediaPlayer.SetVideoCallbacks(Lock, null, Display);*/
 
                 // Start recording
                 mediaPlayer.Play(media);
